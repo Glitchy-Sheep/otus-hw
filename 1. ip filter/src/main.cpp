@@ -1,8 +1,44 @@
-#include <cassert>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <cassert>
+
+using ipv4_addr_t       = std::vector<unsigned int>;
+using ipv4_addr_pool_t  = std::vector<ipv4_addr_t>;
+using splitted_string_t = std::vector<std::string>;
+
+
+
+std::ostream& operator<<(std::ostream& out, const ipv4_addr_t& ip)
+{
+    auto beg = ip.begin();
+    auto end = ip.end();
+
+    for (auto cur = beg; cur != end; ++cur)
+    {
+        out << *cur;
+        if (cur != end-1)
+            std::cout << '.';
+    }
+
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const ipv4_addr_pool_t pool)
+{
+    auto beg = pool.begin();
+    auto end = pool.end();
+
+    for (auto cur = beg; cur != end; ++cur)
+    {
+        out << *cur;
+        if (cur != end-1)
+            std::cout << '\n';
+    }
+
+    return out;
+}
 
 // ("",  '.') -> [""]
 // ("11", '.') -> ["11"]
@@ -10,52 +46,65 @@
 // ("11.", '.') -> ["11", ""]
 // (".11", '.') -> ["", "11"]
 // ("11.22", '.') -> ["11", "22"]
-std::vector<std::string> split(const std::string &str, char d)
+splitted_string_t split(const std::string &str, char d)
 {
-    std::vector<std::string> r;
+    splitted_string_t res;
 
     std::string::size_type start = 0;
     std::string::size_type stop = str.find_first_of(d);
     while(stop != std::string::npos)
     {
-        r.push_back(str.substr(start, stop - start));
+        res.push_back(str.substr(start, stop - start));
 
         start = stop + 1;
         stop = str.find_first_of(d, start);
     }
 
-    r.push_back(str.substr(start));
+    res.push_back(str.substr(start));
 
-    return r;
+    return res;
+}
+
+ipv4_addr_pool_t get_ip_pool(std::istream& in)
+{
+    ipv4_addr_pool_t ip_pool;
+
+    for(std::string line; std::getline(in, line);)
+    {
+        // Get line of data: "TARGET\tTRASH\tTRASH\t"
+        splitted_string_t tmp = split(line, '\t');
+        std::string ipv4_str = tmp.at(0);
+
+        // ["255", "255", "255", "255"]
+        splitted_string_t octets = split(ipv4_str, '.');
+        assert(octets.size() == 4);
+
+        // [255, 255, 255, 255]
+        ipv4_addr_t ip;
+        std::for_each(octets.begin(), octets.end(),
+            [&ip](std::string octet)
+            {
+                ip.push_back(std::stoi(octet));
+            }
+        );
+
+        ip_pool.push_back(ip);
+    }
+
+    return ip_pool;
 }
 
 int main(int argc, char const *argv[])
 {
     try
     {
-        std::vector<std::vector<std::string>> ip_pool;
+        ipv4_addr_pool_t ip_pool;
 
-        for(std::string line; std::getline(std::cin, line);)
-        {
-            std::vector<std::string> v = split(line, '\t');
-            ip_pool.push_back(split(v.at(0), '.'));
-        }
+        ip_pool = get_ip_pool(std::cin);
+
+        std::cout << ip_pool << std::endl;
 
         // TODO reverse lexicographically sort
-
-        for(std::vector<std::vector<std::string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
-        {
-            for(std::vector<std::string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-            {
-                if (ip_part != ip->cbegin())
-                {
-                    std::cout << ".";
-
-                }
-                std::cout << *ip_part;
-            }
-            std::cout << std::endl;
-        }
 
         // 222.173.235.246
         // 222.130.177.64
