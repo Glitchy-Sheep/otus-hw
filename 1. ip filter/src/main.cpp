@@ -101,10 +101,9 @@ int main(int argc, char const *argv[])
         ipv4_addr_pool_t ip_pool;
 
         ip_pool = get_ip_pool(std::cin);
+        std::sort(ip_pool.begin(), ip_pool.end(), std::greater<ipv4_addr_t>());
 
         std::cout << ip_pool << std::endl;
-
-        // TODO reverse lexicographically sort
 
         // 222.173.235.246
         // 222.130.177.64
@@ -114,8 +113,28 @@ int main(int argc, char const *argv[])
         // 1.29.168.152
         // 1.1.234.8
 
+
         // TODO filter by first byte and output
-        // ip = filter(1)
+        auto filter = [&ip_pool](auto ...args)
+        {
+            ipv4_addr_pool_t filtered{};
+            ipv4_addr_t ip_mask{};
+
+            // unpacking filter parameters
+            const int n_oct = sizeof...(args);
+            int a[n_oct] = {
+                (ip_mask.push_back(args), 0)...
+            };
+
+            for (auto &ip : ip_pool)
+            {
+                // check ip by mask
+                if (std::equal(ip_mask.begin(), ip_mask.begin()+n_oct, ip.begin(), ip.begin()+n_oct))
+                    std::cout << ip << std::endl;
+            }
+        };
+
+        filter(1);
 
         // 1.231.69.33
         // 1.87.203.225
@@ -123,16 +142,25 @@ int main(int argc, char const *argv[])
         // 1.29.168.152
         // 1.1.234.8
 
-        // TODO filter by first and second bytes and output
-        // ip = filter(46, 70)
+        filter(46, 70);
 
         // 46.70.225.39
         // 46.70.147.26
         // 46.70.113.73
         // 46.70.29.76
 
+
         // TODO filter by any byte and output
-        // ip = filter_any(46)
+        auto filter_any = [&ip_pool](int target_octet)
+        {
+            for (auto &ip : ip_pool)
+            {
+                if (std::any_of(ip.begin(), ip.end(), [&](auto octet){return octet==target_octet;}))
+                    std::cout << ip << std::endl;
+            }
+        };
+
+        filter_any(46);
 
         // 186.204.34.46
         // 186.46.222.194
