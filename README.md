@@ -7,3 +7,5 @@ Actually all the tasks had to work with some CI/CD service, but since CircleCI i
 ## Tasks:
 
 [1. ip filter](https://github.com/Glitchy-Sheep/otus-hw/tree/main/1.%20ip%20filter)
+
+[2. ip filter range](https://github.com/Glitchy-Sheep/otus-hw/tree/main/2.%20ip%20filter%20range)
