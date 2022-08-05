@@ -7,4 +7,5 @@ set (SOURCES
     ${SRC_DIR}/main.cpp
 )
 
-add_executable(main ${SOURCES}) 
+add_executable(main ${SOURCES})
+add_executable(test ${SRC_DIR}/test.cpp)
