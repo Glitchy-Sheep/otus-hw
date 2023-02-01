@@ -3,10 +3,10 @@
 
 int main()
 {
-    // Data must be generated in result.txt before start
+    // Data must be generated in results.txt before start
     // Test is successful if there is no difference in files
-    std::ifstream input{"result.txt", std::ios_base::in};
-    std::ifstream output{"output.tst", std::ios_base::in};
+    std::ifstream input{"results.txt", std::ios_base::in};
+    std::ifstream output{"output.txt", std::ios_base::in};
 
     int line_n = 1;
     while(!input.eof() && !output.eof())
