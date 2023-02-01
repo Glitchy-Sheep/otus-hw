@@ -9,16 +9,12 @@ using ipv4_addr_pool_t  = std::vector<ipv4_addr_t>;
 using splitted_string_t = std::vector<std::string>;
 
 
-
 std::ostream& operator<<(std::ostream& out, const ipv4_addr_t& ip)
 {
-    auto beg = ip.begin();
-    auto end = ip.end();
-
-    for (auto cur = beg; cur != end; ++cur)
+    for (auto cur = ip.begin(); cur != ip.end(); ++cur)
     {
         out << *cur;
-        if (cur != end-1)
+        if (cur != ip.end()-1)
             std::cout << '.';
     }
 
@@ -27,13 +23,10 @@ std::ostream& operator<<(std::ostream& out, const ipv4_addr_t& ip)
 
 std::ostream& operator<<(std::ostream& out, const ipv4_addr_pool_t pool)
 {
-    auto beg = pool.begin();
-    auto end = pool.end();
-
-    for (auto cur = beg; cur != end; ++cur)
+    for (auto cur = pool.begin(); cur != pool.end(); ++cur)
     {
         out << *cur;
-        if (cur != end-1)
+        if (cur != pool.end()-1)
             std::cout << '\n';
     }
 
@@ -46,40 +39,37 @@ std::ostream& operator<<(std::ostream& out, const ipv4_addr_pool_t pool)
 // ("11.", '.') -> ["11", ""]
 // (".11", '.') -> ["", "11"]
 // ("11.22", '.') -> ["11", "22"]
-splitted_string_t split(const std::string &str, char d)
+splitted_string_t split(const std::string &str, char delimeter)
 {
     splitted_string_t res;
 
     std::string::size_type start = 0;
-    std::string::size_type stop = str.find_first_of(d);
+    std::string::size_type stop = str.find_first_of(delimeter);
     while(stop != std::string::npos)
     {
         res.push_back(str.substr(start, stop - start));
-
         start = stop + 1;
-        stop = str.find_first_of(d, start);
+        stop = str.find_first_of(delimeter, start);
     }
 
     res.push_back(str.substr(start));
-
     return res;
 }
 
 ipv4_addr_pool_t get_ip_pool(std::istream& in)
 {
     ipv4_addr_pool_t ip_pool;
+    std::string ip_line;
 
-    for(std::string line; std::getline(in, line);)
+    while(std::getline(in, ip_line))
     {
-        // Get line of data: "TARGET\tTRASH\tTRASH\t"
-        splitted_string_t tmp = split(line, '\t');
+        // Get line of data: "target_ip\tTRASH\tTRASH\t"
+        splitted_string_t tmp = split(ip_line, '\t');
         std::string ipv4_str = tmp.at(0);
 
-        // ["255", "255", "255", "255"]
         splitted_string_t octets = split(ipv4_str, '.');
         assert(octets.size() == 4);
 
-        // [255, 255, 255, 255]
         ipv4_addr_t ip;
         std::for_each(octets.begin(), octets.end(),
             [&ip](std::string octet)
@@ -94,6 +84,8 @@ ipv4_addr_pool_t get_ip_pool(std::istream& in)
     return ip_pool;
 }
 
+
+
 int main(int argc, char const *argv[])
 {
     try
@@ -104,7 +96,6 @@ int main(int argc, char const *argv[])
         std::sort(ip_pool.begin(), ip_pool.end(), std::greater<ipv4_addr_t>());
 
         std::cout << ip_pool << std::endl;
-
         // 222.173.235.246
         // 222.130.177.64
         // 222.82.198.61
@@ -114,36 +105,41 @@ int main(int argc, char const *argv[])
         // 1.1.234.8
 
 
-        // TODO filter by first byte and output
+        // Filter by first byte and output
         auto filter = [&ip_pool](auto ...args)
         {
             ipv4_addr_pool_t filtered{};
             ipv4_addr_t ip_mask{};
 
-            // unpacking filter parameters
-            const int n_oct = sizeof...(args);
-            int a[n_oct] = {
+            // unpacking filter variadic parameters
+            const int count_of_octets = sizeof...(args);
+            static_assert(count_of_octets <= 4);
+
+            int a[count_of_octets] = {
                 (ip_mask.push_back(args), 0)...
             };
 
             for (auto &ip : ip_pool)
             {
                 // check ip by mask
-                if (std::equal(ip_mask.begin(), ip_mask.begin()+n_oct, ip.begin(), ip.begin()+n_oct))
+                if (std::equal(
+                        ip_mask.begin(), ip_mask.begin()+count_of_octets,
+                        ip.begin(), ip.begin()+count_of_octets))
+                {
                     std::cout << ip << std::endl;
+                }
             }
         };
 
         filter(1);
-
         // 1.231.69.33
         // 1.87.203.225
         // 1.70.44.170
         // 1.29.168.152
         // 1.1.234.8
 
-        filter(46, 70);
 
+        filter(46, 70);
         // 46.70.225.39
         // 46.70.147.26
         // 46.70.113.73
@@ -155,13 +151,15 @@ int main(int argc, char const *argv[])
         {
             for (auto &ip : ip_pool)
             {
-                if (std::any_of(ip.begin(), ip.end(), [&](auto octet){return octet==target_octet;}))
+                if (std::any_of(ip.begin(), ip.end(),
+                                [&](auto octet){return octet==target_octet;}))
+                {
                     std::cout << ip << std::endl;
+                }
             }
         };
 
         filter_any(46);
-
         // 186.204.34.46
         // 186.46.222.194
         // 185.46.87.231
