@@ -86,7 +86,7 @@ ipv4_addr_pool_t get_ip_pool(std::istream& in)
 
 
 
-int main(int argc, char const *argv[])
+int main()
 {
     try
     {
@@ -109,19 +109,15 @@ int main(int argc, char const *argv[])
         auto filter = [&ip_pool](auto ...args)
         {
             ipv4_addr_pool_t filtered{};
-            ipv4_addr_t ip_mask{};
+            ipv4_addr_t ip_mask{static_cast<unsigned int>(args)...};
 
-            // unpacking filter variadic parameters
             const int count_of_octets = sizeof...(args);
-            static_assert(count_of_octets <= 4);
+            static_assert(count_of_octets <= 4,
+                                "count of octets should be <= 4 for filtering");
 
-            int a[count_of_octets] = {
-                (ip_mask.push_back(args), 0)...
-            };
 
             for (auto &ip : ip_pool)
             {
-                // check ip by mask
                 if (std::equal(
                         ip_mask.begin(), ip_mask.begin()+count_of_octets,
                         ip.begin(), ip.begin()+count_of_octets))
@@ -147,7 +143,7 @@ int main(int argc, char const *argv[])
 
 
         // TODO filter by any byte and output
-        auto filter_any = [&ip_pool](int target_octet)
+        auto filter_any = [&ip_pool](unsigned int target_octet)
         {
             for (auto &ip : ip_pool)
             {
